@@ -18,6 +18,12 @@ SAMPLES = ROOT / "samples"
 PHOTO_TYPES = {".heic", ".jpg", ".jpeg", ".png"}
 MAX_TITLE = 45  # longer titles get cut off in the iPhone calendar views
 
+FORBIDDEN = [
+    "angekreuzt",
+    "handschriftlich",
+    "arztpraxis",
+]  # slip descriptions / placeholders
+
 
 def prompt_version() -> str:
     """Last commit that touched prompts/, plus '+dirty' if there are uncommitted edits."""
@@ -73,6 +79,9 @@ def score(events: list[dict], expected: list[dict]) -> list[str]:
         for word in exp["mentions"]:
             if word.lower() not in text:
                 problems.append(f"{exp['start']}: '{word}' not mentioned")
+        for word in FORBIDDEN:
+            if word in text:
+                problems.append(f"{exp['start']}: contains '{word}'")
         title = ev.get("title", "")
         if len(title) > MAX_TITLE:
             problems.append(
