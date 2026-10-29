@@ -1,0 +1,1 @@
+Extract all appointments from this photo.
