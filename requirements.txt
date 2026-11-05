@@ -1,5 +1,5 @@
-anthropic
-pillow
-pillow-heif
-python-dotenv
-httpx
+anthropic==2.3.0
+httpx==0.28.1
+pillow==13.0.0
+pillow-heif==1.8.1
+python-dotenv==1.2.4
