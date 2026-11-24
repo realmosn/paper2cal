@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
-"""Run every photo in samples/ through the model and score it against samples/expected.json.
+"""Run every photo in a samples folder through the model and score it against its expected.json.
 
-python evaluate.py            # call the API for all photos
-python evaluate.py --cached   # re-score the last results without calling the API
+python evaluate.py                      # your private samples/ (default)
+python evaluate.py --samples examples   # the public example slip
+python evaluate.py --cached             # re-score the last results without calling the API
+
+An expected.json may contain "_today": "YYYY-MM-DD". The run then uses that as today's date,
+so slips without a year resolve the same way on every run, no matter when it is run.
 """
 
 import argparse
 import datetime as dt
 import json
+import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from extract import MODEL, OUT, ROOT, extract
 
-SAMPLES = ROOT / "samples"
 PHOTO_TYPES = {".heic", ".jpg", ".jpeg", ".png"}
 MAX_TITLE = 45  # longer titles get cut off in the iPhone calendar views
 
@@ -95,17 +99,30 @@ def main() -> None:
     parser.add_argument(
         "--cached", action="store_true", help="re-score saved results, no API calls"
     )
+    parser.add_argument(
+        "--samples",
+        default="samples",
+        metavar="DIR",
+        help="folder with the photos and their expected.json (default: samples)",
+    )
     args = parser.parse_args()
 
-    expected = json.loads((SAMPLES / "expected.json").read_text())
-    photos = sorted(p for p in SAMPLES.iterdir() if p.suffix.lower() in PHOTO_TYPES)
+    samples = ROOT / args.samples
+    expected = json.loads((samples / "expected.json").read_text())
+    pinned = expected.pop("_today", None)
+    if pinned:  # the answer key was written for this date, so pin it
+        os.environ["PAPER2CAL_TODAY"] = pinned
+    photos = sorted(p for p in samples.iterdir() if p.suffix.lower() in PHOTO_TYPES)
     OUT.mkdir(exist_ok=True)
 
     with ThreadPoolExecutor(max_workers=3) as pool:
         results = list(pool.map(lambda p: run(p, args.cached), photos))
 
     version = prompt_version()
-    print(f"prompt {version}   model {MODEL}{'   (cached)' if args.cached else ''}\n")
+    print(
+        f"samples {args.samples}   today {pinned or 'real date'}   "
+        f"prompt {version}   model {MODEL}{'   (cached)' if args.cached else ''}\n"
+    )
     passed = warned = tokens_in = tokens_out = 0
     for photo, (text, (t_in, t_out)) in zip(photos, results):
         tokens_in, tokens_out = tokens_in + t_in, tokens_out + t_out
@@ -138,7 +155,7 @@ def main() -> None:
     if not args.cached:  # keep a history so prompt versions can be compared later
         with (OUT / "history.tsv").open("a") as f:
             f.write(
-                f"{dt.datetime.now():%Y-%m-%d %H:%M}\t{version}\t{MODEL}\t{passed}/{keyed}\t{warned}\t{tokens_in}\t{tokens_out}\n"
+                f"{dt.datetime.now():%Y-%m-%d %H:%M}\t{version}\t{MODEL}\t{passed}/{keyed}\t{warned}\t{tokens_in}\t{tokens_out}\t{args.samples}\n"
             )
 
 

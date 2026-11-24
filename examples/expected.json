@@ -1,0 +1,7 @@
+{
+  "_today": "2026-11-24",
+  "beispiel-handschrift": [
+    {"start": "2027-03-16 10:30", "end": "2027-03-16 11:00", "mentions": ["Beispiel", "12345", "nüchtern"]},
+    {"start": "2027-03-17 09:00", "end": "2027-03-17 10:00", "mentions": ["Beispiel", "Versichertenkarte"]}
+  ]
+}

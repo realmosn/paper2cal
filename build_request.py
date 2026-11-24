@@ -6,14 +6,13 @@ python build_request.py --test samples/IMG_3128.HEIC   # sends it once, exactly 
 """
 
 import argparse
-import datetime as dt
 import json
 import os
 from pathlib import Path
 
 import httpx
 
-from extract import MODEL, OUT, ROOT, load_image
+from extract import MODEL, OUT, ROOT, load_image, today
 
 # Placeholders you replace with Shortcut variables
 TODAY = "@@TODAY@@"
@@ -52,7 +51,7 @@ def template() -> str:
 def test(body_template: str, photo: Path) -> None:
     """Fill the placeholders and send the request with plain HTTP, parsing the answer like the Shortcut will."""
     body = body_template.replace(
-        TODAY, dt.date.today().strftime("%Y-%m-%d (%A)")
+        TODAY, today().strftime("%Y-%m-%d (%A)")
     ).replace(IMAGE, load_image(photo))
     resp = httpx.post(
         "https://api.anthropic.com/v1/messages",

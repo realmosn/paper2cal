@@ -31,9 +31,15 @@ def load_image(path: Path) -> str:
     return base64.b64encode(buf.getvalue()).decode()
 
 
+def today() -> dt.date:
+    """Today's date, or PAPER2CAL_TODAY=YYYY-MM-DD to pin it (makes test runs reproducible)."""
+    pinned = os.environ.get("PAPER2CAL_TODAY")
+    return dt.date.fromisoformat(pinned) if pinned else dt.date.today()
+
+
 def system_prompt() -> str:
-    today = dt.date.today().strftime("%Y-%m-%d (%A)")
-    return (ROOT / "prompts/system.md").read_text().replace("{today}", today)
+    date = today().strftime("%Y-%m-%d (%A)")
+    return (ROOT / "prompts/system.md").read_text().replace("{today}", date)
 
 
 def extract(path: Path) -> tuple[str, anthropic.types.Message]:
